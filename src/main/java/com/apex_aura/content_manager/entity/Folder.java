@@ -39,10 +39,10 @@ public class Folder {
     private Set<Content> contents = new HashSet<>();
 
     @Column(nullable = false)
-    private Boolean isRoot = false;
+    private Boolean isRoot = true;
 
     @Column(nullable = false)
-    private Boolean isUniversal = false; // true if all users can access
+    private Boolean isUniversal = true; // true if all users can access
 
     private Double price; // if restricted folder has a paywall
 
