@@ -16,7 +16,7 @@ public class FolderAccess {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long folderAccessId;
 
     @ManyToOne
     @JoinColumn(name = "folder_id", nullable = false)

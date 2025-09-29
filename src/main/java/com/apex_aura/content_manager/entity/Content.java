@@ -4,6 +4,8 @@ package com.apex_aura.content_manager.entity;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "contents")
@@ -11,7 +13,8 @@ public class Content {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "content_id")
+    private Long contentId;
 
     @ManyToOne
     @JoinColumn(name = "folder_id", nullable = false)
@@ -34,8 +37,22 @@ public class Content {
 
     private Long sizeInBytes;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false, updatable = false)
+    private ZonedDateTime createdAt;
 
-    private LocalDateTime updatedAt;
+    @Column
+    private ZonedDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        ZoneId indiaZone = ZoneId.of("Asia/Kolkata"); // GMT+5:30
+        this.createdAt = ZonedDateTime.now(indiaZone);
+        this.updatedAt = ZonedDateTime.now(indiaZone);
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        ZoneId indiaZone = ZoneId.of("Asia/Kolkata"); // GMT+5:30
+        this.updatedAt = ZonedDateTime.now(indiaZone);
+    }
 }

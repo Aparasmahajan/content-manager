@@ -28,10 +28,17 @@ public class JwtRequestFilter extends GenericFilterBean {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
 
         String authHeader = request.getHeader("Authorization");
+        String id = request.getHeader("id");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Missing or invalid Authorization header");
+            return;
+        }
+
+        if (id == null || id.trim().isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Missing or invalid userId header");
             return;
         }
 
@@ -41,6 +48,12 @@ public class JwtRequestFilter extends GenericFilterBean {
             // Validate token and extract claims
             String username = jwtUtil.extractUsername(token);
             Long userId = jwtUtil.extractUserId(token);
+
+            if(!id.equals(String.valueOf(userId))) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("userId does not match");
+                return;
+            }
 
             // Store in request for later use by controllers
             request.setAttribute("username", username);

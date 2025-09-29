@@ -8,7 +8,7 @@ public class MediaMetadata {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long mediaMetadataId;
 
     @OneToOne
     @JoinColumn(name = "content_id", nullable = false)

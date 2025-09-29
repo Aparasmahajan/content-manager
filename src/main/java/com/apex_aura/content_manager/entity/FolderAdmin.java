@@ -14,7 +14,7 @@ public class FolderAdmin {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long folderAdminId;
 
 
     @Column(nullable = false)

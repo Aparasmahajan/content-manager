@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -18,7 +20,7 @@ public class Folder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long folderId;
 
     @Column(nullable = false)
     private Long portalId;
@@ -51,11 +53,26 @@ public class Folder {
     @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<FolderAdmin> admins = new HashSet<>();
 
+    String description;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false, updatable = false)
+    private ZonedDateTime createdAt;
 
-    private LocalDateTime updatedAt;
+    @Column
+    private ZonedDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        ZoneId indiaZone = ZoneId.of("Asia/Kolkata"); // GMT+5:30
+        this.createdAt = ZonedDateTime.now(indiaZone);
+        this.updatedAt = ZonedDateTime.now(indiaZone);
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        ZoneId indiaZone = ZoneId.of("Asia/Kolkata"); // GMT+5:30
+        this.updatedAt = ZonedDateTime.now(indiaZone);
+    }
 
     @Column
     private Integer accessDurationInDays; // optional, null = unlimited
