@@ -44,8 +44,13 @@ public class Folder {
 
     private Double price; // if restricted folder has a paywall
 
-    @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<FolderAccess> folderAccessList = new HashSet<>();
+
+    //add owner of various folders
+    @OneToMany(mappedBy = "folder", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<FolderAdmin> admins = new HashSet<>();
+
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
