@@ -32,8 +32,8 @@ public class ContentServiceImpl implements ContentService {
             Folder folder = folderRepository.findById(req.getFolderId())
                     .orElseThrow(() -> new RuntimeException("Folder not found"));
 
-// Fetch folder admins
-            Set<Long> folderAdminIds = folderAdminRepository.findByFolder(folder)
+            // Fetch folder admins
+            Set<Long> folderAdminIds = folderAdminRepository.findAllByFolder_FolderId(req.getFolderId())
                     .stream()
                     .map(FolderAdmin::getUserId)
                     .collect(Collectors.toSet());

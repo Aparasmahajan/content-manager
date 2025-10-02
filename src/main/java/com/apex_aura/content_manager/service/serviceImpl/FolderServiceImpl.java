@@ -143,7 +143,7 @@ public class FolderServiceImpl implements FolderService {
             }
 
             // Fetch folder admins from DB
-            Set<Long> folderAdminIds = folderAdminRepository.findByFolder(folder)
+            Set<Long> folderAdminIds = folderAdminRepository.findAllByFolder_FolderId(folderId)
                     .stream()
                     .map(FolderAdmin::getUserId)
                     .collect(Collectors.toSet());

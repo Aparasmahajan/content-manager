@@ -9,6 +9,4 @@ import java.util.Optional;
 
 public interface FolderAdminRepository extends JpaRepository<FolderAdmin, Long> {
     List<FolderAdmin> findAllByFolder_FolderId(Long folderId);
-
-    Optional<FolderAdmin> findByFolder(Folder folder);
 }
