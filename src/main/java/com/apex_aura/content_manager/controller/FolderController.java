@@ -24,4 +24,10 @@ public class FolderController {
     public ResponseDTO getFolderDetails(@RequestParam Long folderId, HttpServletRequest request) {
         return folderService.getFolderDetails(folderId, request);
     }
+
+
+    @GetMapping("/getPortalFolders")
+    public ResponseDTO getFolderDetailsByPortalId(@RequestParam Long portalId, HttpServletRequest request) {
+        return folderService.getFolderDetailsByPortalId(portalId, request);
+    }
 }

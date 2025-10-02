@@ -9,4 +9,6 @@ public interface FolderService {
     ResponseDTO createFolder(FolderRequest req);
 
     ResponseDTO getFolderDetails(Long folderId, HttpServletRequest request);
+
+    ResponseDTO getFolderDetailsByPortalId(Long portalId, HttpServletRequest request);
 }

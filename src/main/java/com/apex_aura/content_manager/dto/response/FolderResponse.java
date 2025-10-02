@@ -21,5 +21,6 @@ public class FolderResponse {
     private Boolean isRoot=false;
     private List<FolderResponse> subFolders;   // recursive subfolders
     private List<Long> contents;               // list of content IDs
-    private List<Optional<MediaMetadata>>  mediaMetadataList;               // list of content IDs
+    private List<MediaMetadata>  mediaMetadataList;               // list of content IDs
+    private Boolean canEdit;               // list of content IDs
 }

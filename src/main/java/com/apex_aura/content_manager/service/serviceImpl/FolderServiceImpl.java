@@ -21,6 +21,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -165,9 +166,9 @@ public class FolderServiceImpl implements FolderService {
             }
 
             // ✅ Fetch media metadata for all contents in this folder
-            List<Optional<MediaMetadata>> mediaMetadataList = folder.getContents().stream()
-                    .map(mediaMetadataRepository::findByContent)
-                    .filter(metadata -> metadata != null)
+            List<MediaMetadata> mediaMetadataList = folder.getContents().stream()
+                    .map(content -> mediaMetadataRepository.findByContent(content).orElse(null))
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
             // ✅ Build response
@@ -194,6 +195,82 @@ public class FolderServiceImpl implements FolderService {
                     .status("SUCCESS")
                     .message("Folder details retrieved successfully")
                     .data(folder) // returning entity directly
+                    .responseCode(2000)
+                    .build();
+
+        } catch (Exception e) {
+            return ResponseDTO.builder()
+                    .status("FAILURE")
+                    .message("Error fetching folder details: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @Override
+    public ResponseDTO getFolderDetailsByPortalId(Long portalId, HttpServletRequest request) {
+        try {
+            Long requestingUserId = Long.parseLong(request.getHeader("userId"));
+
+            // Fetch all folders under a portal
+            List<Folder> folders = folderRepository.findByPortalId(portalId);
+            if (folders == null || folders.isEmpty()) {
+                return ResponseDTO.builder()
+                        .status("FAILURE")
+                        .message("No folders found for this portal")
+                        .responseCode(5001)
+                        .build();
+            }
+
+            // Build response for each folder
+            List<FolderResponse> folderResponses = folders.stream().map(folder -> {
+
+                // ✅ 1. Get folder admins
+                Set<Long> folderAdminIds = folderAdminRepository.findAllByFolder_FolderId(folder.getFolderId())
+                        .stream()
+                        .map(FolderAdmin::getUserId)
+                        .collect(Collectors.toSet());
+
+                // ✅ 2. Check folder access table (paid access, expiry, etc.)
+                boolean hasFolderAccess = folder.getFolderAccessList().stream().anyMatch(access ->
+                        access.getUserId().equals(requestingUserId) &&
+                                (access.getExpiresAt() == null || access.getExpiresAt().isAfter(LocalDateTime.now()))
+                );
+
+                // ✅ 3. Check final access: universal OR admin OR access granted
+                boolean hasAccess = folder.getIsUniversal() || folderAdminIds.contains(requestingUserId) || hasFolderAccess;
+
+                if (!hasAccess) {
+                    // If user has no access — skip this folder
+                    return null;
+                }
+
+                // ✅ 4. Fetch media metadata for all contents
+                List<MediaMetadata> mediaMetadataList = folder.getContents().stream()
+                        .map(content -> mediaMetadataRepository.findByContent(content).orElse(null))
+                        .filter(metadata -> metadata != null)
+                        .collect(Collectors.toList());
+
+                // ✅ 5. Build response for this folder
+                return FolderResponse.builder()
+                        .folderId(folder.getFolderId())
+                        .name(folder.getName())
+                        .portalId(folder.getPortalId())
+                        .description(folder.getDescription())
+                        .isUniversal(folder.getIsUniversal())
+                        .price(folder.getPrice())
+                        .accessDurationInDays(folder.getAccessDurationInDays())
+                        .isRoot(folder.getIsRoot())
+                        .adminUserIds(folderAdminIds.stream().toList())
+                        .mediaMetadataList(mediaMetadataList)
+                        .canEdit(folderAdminIds.contains(requestingUserId)) // ✅ Add flag: can edit or not
+                        .build();
+
+            }).filter(folderResponse -> folderResponse != null).collect(Collectors.toList());
+
+            return ResponseDTO.builder()
+                    .status("SUCCESS")
+                    .message("Folder details retrieved successfully")
+                    .data(folderResponses)
                     .responseCode(2000)
                     .build();
 
