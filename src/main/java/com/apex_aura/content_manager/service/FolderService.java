@@ -6,7 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public interface FolderService {
 
-    ResponseDTO createFolder(FolderRequest req);
+    ResponseDTO createFolder(FolderRequest req, HttpServletRequest request);
 
     ResponseDTO getFolderDetails(Long folderId, HttpServletRequest request);
 

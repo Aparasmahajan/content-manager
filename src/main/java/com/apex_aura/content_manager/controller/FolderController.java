@@ -15,8 +15,8 @@ public class FolderController {
     }
 
     @PostMapping("/createFolder")
-    ResponseDTO createPortalInfo(@RequestBody FolderRequest folderRequest) {
-        return folderService.createFolder(folderRequest);
+    ResponseDTO createPortalInfo(@RequestBody FolderRequest folderRequest, HttpServletRequest request) {
+        return folderService.createFolder(folderRequest, request);
     }
 
 

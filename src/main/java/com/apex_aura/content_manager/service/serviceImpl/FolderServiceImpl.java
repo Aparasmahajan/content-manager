@@ -39,8 +39,10 @@ public class FolderServiceImpl implements FolderService {
     String portalInfoUrl;
 
     @Override
-    public ResponseDTO createFolder(FolderRequest req) {
+    public ResponseDTO createFolder(FolderRequest req, HttpServletRequest request) {
         try {
+            Long userId = Long.valueOf(request.getHeader("userId"));
+            req.setCreatedByUserId(userId);
             String profilerUrl = portalInfoUrl + req.getPortalName();
             ResponseDTO response = restTemplate.getForObject(profilerUrl, ResponseDTO.class);
 

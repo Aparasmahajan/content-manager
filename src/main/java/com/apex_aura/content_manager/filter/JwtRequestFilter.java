@@ -3,32 +3,38 @@ package com.apex_aura.content_manager.filter;
 import com.apex_aura.content_manager.utils.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.web.filter.GenericFilterBean;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
 @Component
-public class JwtRequestFilter extends GenericFilterBean {
+public class JwtRequestFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtUtil jwtUtil;
 
     @Override
-    public void doFilter(ServletRequest servletRequest,
-                         ServletResponse servletResponse,
-                         FilterChain filterChain) throws IOException, ServletException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
 
-        HttpServletRequest request = (HttpServletRequest) servletRequest;
-        HttpServletResponse response = (HttpServletResponse) servletResponse;
+        String path = request.getServletPath();
+
+        // Allow unauthenticated access to specific paths and OPTIONS preflight
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())
+                || path.startsWith("/health")
+                || path.startsWith("/error")
+                || path.startsWith("/auth/login")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         String authHeader = request.getHeader("Authorization");
-        String id = request.getHeader("id");
+        String id = request.getHeader("userId");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -45,17 +51,15 @@ public class JwtRequestFilter extends GenericFilterBean {
         String token = authHeader.substring(7);
 
         try {
-            // Validate token and extract claims
             String username = jwtUtil.extractUsername(token);
             Long userId = jwtUtil.extractUserId(token);
 
-            if(!id.equals(String.valueOf(userId))) {
+            if (!id.equals(String.valueOf(userId))) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("userId does not match");
                 return;
             }
 
-            // Store in request for later use by controllers
             request.setAttribute("username", username);
             request.setAttribute("userId", userId);
 
@@ -65,7 +69,6 @@ public class JwtRequestFilter extends GenericFilterBean {
             return;
         }
 
-        // Continue the filter chain
         filterChain.doFilter(request, response);
     }
 }
