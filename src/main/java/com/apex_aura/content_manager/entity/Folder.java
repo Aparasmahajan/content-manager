@@ -1,5 +1,6 @@
 package com.apex_aura.content_manager.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,6 +31,7 @@ public class Folder {
 
     @ManyToOne
     @JoinColumn(name = "parent_folder_id")
+    @JsonIgnore
     private Folder parentFolder;
 
     @OneToMany(mappedBy = "parentFolder", cascade = CascadeType.ALL)

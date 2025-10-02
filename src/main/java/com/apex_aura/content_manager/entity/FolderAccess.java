@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "folder_access")

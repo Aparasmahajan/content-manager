@@ -1,7 +1,9 @@
 package com.apex_aura.content_manager.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -9,6 +11,7 @@ import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "contents")
+@Data
 public class Content {
 
     @Id
@@ -18,6 +21,7 @@ public class Content {
 
     @ManyToOne
     @JoinColumn(name = "folder_id", nullable = false)
+    @JsonIgnore
     private Folder folder;
 
     @Enumerated(EnumType.STRING)

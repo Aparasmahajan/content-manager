@@ -1,5 +1,6 @@
 package com.apex_aura.content_manager.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,5 +23,6 @@ public class FolderAdmin {
 
     @ManyToOne
     @JoinColumn(name = "folder_id", nullable = false)
+    @JsonIgnore
     private Folder folder;
 }

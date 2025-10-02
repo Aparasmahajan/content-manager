@@ -7,17 +7,23 @@ import com.apex_aura.content_manager.dto.request.FolderRequest;
 import com.apex_aura.content_manager.dto.response.FolderResponse;
 import com.apex_aura.content_manager.entity.Folder;
 import com.apex_aura.content_manager.entity.FolderAdmin;
+import com.apex_aura.content_manager.entity.MediaMetadata;
 import com.apex_aura.content_manager.repository.FolderRepository;
 import com.apex_aura.content_manager.repository.FolderAdminRepository;
+import com.apex_aura.content_manager.repository.MediaMetadataRepository;
 import com.apex_aura.content_manager.service.FolderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +32,7 @@ public class FolderServiceImpl implements FolderService {
     private final FolderAdminRepository folderAdminRepository;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final MediaMetadataRepository mediaMetadataRepository;
 
     @Value("${profiler.portalInfo.url}")
     String portalInfoUrl;
@@ -122,8 +129,10 @@ public class FolderServiceImpl implements FolderService {
     }
 
     @Override
-    public ResponseDTO getFolderDetails(Long folderId) {
+    public ResponseDTO getFolderDetails(Long folderId, HttpServletRequest request) {
         try {
+            Long requestingUserId = Long.parseLong(request.getHeader("userId"));
+
             Folder folder = folderRepository.findById(folderId).orElse(null);
             if (folder == null) {
                 return ResponseDTO.builder()
@@ -133,14 +142,53 @@ public class FolderServiceImpl implements FolderService {
                         .build();
             }
 
-            // Eagerly load admins, contents, and subfolders (optional, depends on JPA fetch type)
-            folder.getAdmins().size();     // initialize admins
-            folder.getContents().size();   // initialize contents
-            folder.getSubFolders().forEach(sub -> {
-                sub.getAdmins().size();
-                sub.getContents().size();
-                // recursively initialize deeper subfolders if needed
-            });
+            // Fetch folder admins from DB
+            Set<Long> folderAdminIds = folderAdminRepository.findByFolder(folder)
+                    .stream()
+                    .map(FolderAdmin::getUserId)
+                    .collect(Collectors.toSet());
+
+            // Access check: super/admin/folderAdmin
+            boolean hasAccess = folder.getIsUniversal() // universal folder
+                    || folderAdminIds.contains(requestingUserId) // folder admin
+                    || folder.getFolderAccessList().stream().anyMatch(access ->
+                    access.getUserId().equals(requestingUserId)
+                            && (access.getExpiresAt() == null || access.getExpiresAt().isAfter(LocalDateTime.now()))
+            );
+
+            if (!hasAccess) {
+                return ResponseDTO.builder()
+                        .status("FAILURE")
+                        .message("Unauthorized: You do not have access to this folder")
+                        .responseCode(403)
+                        .build();
+            }
+
+            // ✅ Fetch media metadata for all contents in this folder
+            List<Optional<MediaMetadata>> mediaMetadataList = folder.getContents().stream()
+                    .map(mediaMetadataRepository::findByContent)
+                    .filter(metadata -> metadata != null)
+                    .collect(Collectors.toList());
+
+            // ✅ Build response
+            FolderResponse folderResponse = FolderResponse.builder()
+                    .folderId(folder.getFolderId())
+                    .name(folder.getName())
+                    .portalId(folder.getPortalId())
+                    .description(folder.getDescription())
+                    .isUniversal(folder.getIsUniversal())
+                    .price(folder.getPrice())
+                    .accessDurationInDays(folder.getAccessDurationInDays())
+                    .isRoot(folder.getIsRoot())
+                    .adminUserIds(
+                            folder.getAdmins().stream()
+                                    .map(admin -> admin.getUserId())
+                                    .collect(Collectors.toList())
+                    )
+                    // Instead of content list, return media metadata list
+                    .mediaMetadataList(mediaMetadataList)
+                    .build();
+
 
             return ResponseDTO.builder()
                     .status("SUCCESS")
