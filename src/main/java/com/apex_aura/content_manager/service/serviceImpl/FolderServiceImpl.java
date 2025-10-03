@@ -77,7 +77,7 @@ public class FolderServiceImpl implements FolderService {
                     .description(req.getDescription())
                     .isUniversal(req.getIsUniversal())
                     .price(req.getPrice())
-                    .isRoot(req.getIsRoot() != null ? req.getIsRoot() : true)
+                    .isRoot(req.getIsRoot() != null ? req.getIsRoot() : req.getParentFolderId() == null)
                     .accessDurationInDays(req.getAccessDurationInDays())
                     .build();
 
@@ -173,30 +173,19 @@ public class FolderServiceImpl implements FolderService {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
+            boolean isAdmin = folder.getAdmins().stream()
+                    .filter(x-> x.getUserId().equals(requestingUserId))
+                    .findAny()
+                    .isPresent();
+
             // ✅ Build response
-            FolderResponse folderResponse = FolderResponse.builder()
-                    .folderId(folder.getFolderId())
-                    .name(folder.getName())
-                    .portalId(folder.getPortalId())
-                    .description(folder.getDescription())
-                    .isUniversal(folder.getIsUniversal())
-                    .price(folder.getPrice())
-                    .accessDurationInDays(folder.getAccessDurationInDays())
-                    .isRoot(folder.getIsRoot())
-                    .adminUserIds(
-                            folder.getAdmins().stream()
-                                    .map(admin -> admin.getUserId())
-                                    .collect(Collectors.toList())
-                    )
-                    // Instead of content list, return media metadata list
-                    .mediaMetadataList(mediaMetadataList)
-                    .build();
+            FolderResponse folderResponse = mapToFolderResponse(folder, mediaMetadataList, isAdmin);
 
 
             return ResponseDTO.builder()
                     .status("SUCCESS")
                     .message("Folder details retrieved successfully")
-                    .data(folder) // returning entity directly
+                    .data(folderResponse) // returning entity directly
                     .responseCode(2000)
                     .build();
 
@@ -208,6 +197,27 @@ public class FolderServiceImpl implements FolderService {
         }
     }
 
+    private FolderResponse mapToFolderResponse(Folder folder, List<MediaMetadata> mediaList, Boolean canEdit) {
+        return FolderResponse.builder()
+                .folderId(folder.getFolderId())
+                .portalId(folder.getPortalId())
+                .name(folder.getName())
+                .description(folder.getDescription())
+                .isUniversal(folder.getIsUniversal())
+                .price(folder.getPrice())
+                .accessDurationInDays(folder.getAccessDurationInDays())
+                .isRoot(folder.getIsRoot())
+                .contents(folder.getContents().stream().toList())
+                .admins(folder.getAdmins().stream().toList())
+                .folderAccessList(folder.getFolderAccessList())
+                .subFolders(folder.getSubFolders().stream()
+                        .map(sub -> mapToFolderResponse(sub, mediaList, canEdit))
+                        .collect(Collectors.toSet()))
+                .mediaMetadataList(mediaList)
+                .canEdit(canEdit)
+                .createdAt(folder.getCreatedAt())
+                .build();
+    }
     @Override
     public ResponseDTO getFolderDetailsByPortalId(Long portalId, HttpServletRequest request) {
         try {
@@ -269,10 +279,14 @@ public class FolderServiceImpl implements FolderService {
 
             }).filter(folderResponse -> folderResponse != null).collect(Collectors.toList());
 
+            List<FolderResponse> finalResponses = folderResponses.stream()
+                    .filter(x-> x.getIsRoot())
+                    .collect(Collectors.toList());
+
             return ResponseDTO.builder()
                     .status("SUCCESS")
                     .message("Folder details retrieved successfully")
-                    .data(folderResponses)
+                    .data(finalResponses)
                     .responseCode(2000)
                     .build();
 
