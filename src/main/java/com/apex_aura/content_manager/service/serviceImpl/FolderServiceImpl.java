@@ -3,11 +3,14 @@ package com.apex_aura.content_manager.service.serviceImpl;
 import com.apex_aura.content_manager.dto.AdminDto;
 import com.apex_aura.content_manager.dto.PortalDto;
 import com.apex_aura.content_manager.dto.ResponseDTO;
+import com.apex_aura.content_manager.dto.request.FolderAccessRequest;
 import com.apex_aura.content_manager.dto.request.FolderRequest;
 import com.apex_aura.content_manager.dto.response.FolderResponse;
 import com.apex_aura.content_manager.entity.Folder;
+import com.apex_aura.content_manager.entity.FolderAccess;
 import com.apex_aura.content_manager.entity.FolderAdmin;
 import com.apex_aura.content_manager.entity.MediaMetadata;
+import com.apex_aura.content_manager.repository.FolderAccessRepository;
 import com.apex_aura.content_manager.repository.FolderRepository;
 import com.apex_aura.content_manager.repository.FolderAdminRepository;
 import com.apex_aura.content_manager.repository.MediaMetadataRepository;
@@ -15,6 +18,7 @@ import com.apex_aura.content_manager.service.FolderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -22,7 +26,6 @@ import org.springframework.web.client.RestTemplate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,6 +37,7 @@ public class FolderServiceImpl implements FolderService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final MediaMetadataRepository mediaMetadataRepository;
+    private final FolderAccessRepository folderAccessRepository;
 
     @Value("${profiler.portalInfo.url}")
     String portalInfoUrl;
@@ -300,4 +304,40 @@ public class FolderServiceImpl implements FolderService {
 
 
 
+    @Override
+    public ResponseDTO folderAccessUpdate(FolderAccessRequest folderAccessRequest, HttpServletRequest request) {
+        Folder folder = folderRepository.findById(folderAccessRequest.getFolderId()).orElse(null);
+        if (folder == null) {
+            return ResponseDTO.builder()
+                    .status("FAILURE")
+                    .message("Folder not found")
+                    .responseCode(5001)
+                    .build();
+        }
+
+        List<FolderAccess> folderAccessList = folderAccessRequest.getUserIds().stream()
+                .map(userId -> FolderAccess.builder()
+                        .folder(folder)
+                        .userId(userId)
+                        .grantedAt(LocalDateTime.now())
+                        .expiresAt(folder.getAccessDurationInDays() != null
+                                ? LocalDateTime.now().plusDays(folder.getAccessDurationInDays())
+                                : LocalDateTime.now().plusYears(1))
+                        .hasPaid(false)
+                        .build())
+                .toList();
+
+
+        try {
+            folderAccessRepository.saveAll(folderAccessList);
+        } catch (Exception e) {
+            throw new RuntimeException(e.getStackTrace().toString());
+        }
+
+        return ResponseDTO.builder()
+                .status("SUCCESS")
+                .message("Access granted to all users in portal " + folder.getPortalId())
+                .responseCode(2000)
+                .build();
+    }
 }
