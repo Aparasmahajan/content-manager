@@ -46,7 +46,7 @@ public class ContentServiceImpl implements ContentService {
                         .build();
             }
 
-            // Save Content
+            // Create Content
             Content content = new Content();
             content.setFolder(folder);
             content.setType(req.getType());
@@ -56,18 +56,18 @@ public class ContentServiceImpl implements ContentService {
             content.setTextContent(req.getTextContent());
             content.setSizeInBytes(req.getSizeInBytes());
 
-            Content savedContent = contentRepository.save(content);
-
-            // Save Media Metadata
+            // Create MediaMetadata
             MediaMetadata metadata = new MediaMetadata();
-            metadata.setContent(savedContent);
             metadata.setMimeType(req.getMimeType());
             metadata.setDuration(req.getDuration());
             metadata.setPageCount(req.getPageCount());
             metadata.setResolution(req.getResolution());
             metadata.setThumbnailUrl(req.getThumbnailUrl());
-            mediaMetadataRepository.save(metadata);
 
+            content.setMediaMetadata(metadata);
+            metadata.setContent(content);
+
+            Content savedContent = contentRepository.save(content);
             return ResponseDTO.builder()
                     .status("SUCCESS")
                     .message("Content created successfully")

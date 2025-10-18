@@ -4,6 +4,8 @@ package com.apex_aura.content_manager.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -40,6 +42,11 @@ public class Content {
     private String textContent; // for blog content (can be Markdown/HTML)
 
     private Long sizeInBytes;
+
+    @OneToOne(mappedBy = "content", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    private MediaMetadata mediaMetadata;
 
     @Column(nullable = false, updatable = false)
     private ZonedDateTime createdAt;

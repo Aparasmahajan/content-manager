@@ -27,7 +27,7 @@ public class FolderResponse {
     private List<Content> contents;                  // full content objects
     private List<FolderAdmin> admins;                // full admin objects
     private Set<FolderAccess> folderAccessList;     // access list
-    private List<MediaMetadata> mediaMetadataList;  // media metadata
+//    private List<MediaMetadata> mediaMetadataList;  // media metadata
 
     private Boolean canEdit;
     private ZonedDateTime createdAt;

@@ -217,7 +217,7 @@ public class FolderServiceImpl implements FolderService {
                 .subFolders(folder.getSubFolders().stream()
                         .map(sub -> mapToFolderResponse(sub, mediaList, canEdit))
                         .collect(Collectors.toSet()))
-                .mediaMetadataList(mediaList)
+//                .mediaMetadataList(mediaList)
                 .canEdit(canEdit)
                 .createdAt(folder.getCreatedAt())
                 .build();
@@ -277,7 +277,7 @@ public class FolderServiceImpl implements FolderService {
                         .accessDurationInDays(folder.getAccessDurationInDays())
                         .isRoot(folder.getIsRoot())
                         .adminUserIds(folderAdminIds.stream().toList())
-                        .mediaMetadataList(mediaMetadataList)
+//                        .mediaMetadataList(mediaMetadataList)
                         .canEdit(folderAdminIds.contains(requestingUserId)) // ✅ Add flag: can edit or not
                         .build();
 
