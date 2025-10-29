@@ -4,6 +4,7 @@ import com.apex_aura.content_manager.dto.AdminDto;
 import com.apex_aura.content_manager.dto.PortalDto;
 import com.apex_aura.content_manager.dto.ResponseDTO;
 import com.apex_aura.content_manager.dto.request.FolderAccessRequest;
+import com.apex_aura.content_manager.dto.request.FolderAdminRequest;
 import com.apex_aura.content_manager.dto.request.FolderRequest;
 import com.apex_aura.content_manager.dto.response.FolderResponse;
 import com.apex_aura.content_manager.entity.Folder;
@@ -18,15 +19,12 @@ import com.apex_aura.content_manager.service.FolderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,7 +45,7 @@ public class FolderServiceImpl implements FolderService {
         try {
             Long userId = Long.valueOf(request.getHeader("userId"));
             req.setCreatedByUserId(userId);
-            String profilerUrl = portalInfoUrl + req.getPortalName();
+            String profilerUrl = portalInfoUrl.replace("$PORTAL_NAME$",req.getPortalName());
             ResponseDTO response = restTemplate.getForObject(profilerUrl, ResponseDTO.class);
 
             if (response == null || response.getData() == null) {
@@ -337,6 +335,57 @@ public class FolderServiceImpl implements FolderService {
         return ResponseDTO.builder()
                 .status("SUCCESS")
                 .message("Access granted to all users in portal " + folder.getPortalId())
+                .responseCode(2000)
+                .build();
+    }
+
+    @Override
+    public ResponseDTO getFolderAdmins(Long folderId, HttpServletRequest request) {
+        return null;
+    }
+
+    //    @Override
+    public ResponseDTO folderAdminUpdate(Long folderId, HttpServletRequest request) {
+
+
+        return ResponseDTO.builder()
+                .status("SUCCESS")
+                .message("Access granted to all users in portal ")
+                .responseCode(2000)
+                .build();
+    }
+
+    @Override
+    public ResponseDTO getFolderAdmins(FolderAdminRequest folderAdminRequest, HttpServletRequest request) {
+        List<FolderAdmin> folderAdmin =  folderAdminRepository.findAllByFolder_FolderId(folderAdminRequest.getFolderId());
+
+        List<Long> adminUserIds = folderAdminRepository.findAllByFolder_FolderId(folderAdminRequest.getFolderId())
+                .stream()
+                .map(FolderAdmin::getUserId)
+                .collect(Collectors.toList());
+
+        ;
+
+        ResponseDTO response = restTemplate.getForObject(portalInfoUrl.replace("$PORTAL_NAME$",folderAdminRequest.getPortalName()), ResponseDTO.class);
+
+        Map<String, Object> dataMap = (Map<String, Object>) response.getData();
+        List<Long> adminUserIdsFromResponse = ((List<HashMap<String, Object>>) dataMap.get("admins"))
+                .stream()
+                .map(admin -> ((Number) admin.get("userId")).longValue())
+                .collect(Collectors.toList());
+//        List <Long> adminUserIdsFromPortal = response
+
+        if (folderAdmin == null) {
+            return ResponseDTO.builder()
+                    .status("FAILURE")
+                    .message("Folder Admin not found")
+                    .responseCode(5001)
+                    .build();
+        }
+
+        return ResponseDTO.builder()
+                .status("SUCCESS")
+                .message("Access granted to all users in portal ")
                 .responseCode(2000)
                 .build();
     }

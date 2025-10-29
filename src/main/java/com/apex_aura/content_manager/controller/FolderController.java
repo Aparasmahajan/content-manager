@@ -2,6 +2,7 @@ package com.apex_aura.content_manager.controller;
 
 import com.apex_aura.content_manager.dto.ResponseDTO;
 import com.apex_aura.content_manager.dto.request.FolderAccessRequest;
+import com.apex_aura.content_manager.dto.request.FolderAdminRequest;
 import com.apex_aura.content_manager.dto.request.FolderRequest;
 import com.apex_aura.content_manager.service.FolderService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,5 +37,11 @@ public class FolderController {
     @PostMapping("/folderAccessUpdate")
     public ResponseDTO folderAccessUpdate(@RequestBody FolderAccessRequest folderAccessRequest, HttpServletRequest request) {
         return folderService.folderAccessUpdate(folderAccessRequest, request);
+    }
+
+
+    @PostMapping("/getFolderAdmins")
+    public ResponseDTO getFolderAdmins(@RequestBody FolderAdminRequest folderAdminRequest, HttpServletRequest request) {
+        return folderService.getFolderAdmins(folderAdminRequest, request);
     }
 }
